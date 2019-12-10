@@ -137,6 +137,12 @@ IValue ClassType::getConstant(size_t slot) const {
   return constantValues_[slot];
 }
 
+void ClassType::unsafeRemoveConstant(const std::string& name) {
+  auto slot = getConstantSlot(name);
+  constantNames_.erase(constantNames_.begin() + slot);
+  constantValues_.erase(constantValues_.begin() + slot);
+}
+
 std::shared_ptr<CompilationUnit> ClassType::compilation_unit() {
   auto cu = compilation_unit_.lock();
   TORCH_INTERNAL_ASSERT(cu);
