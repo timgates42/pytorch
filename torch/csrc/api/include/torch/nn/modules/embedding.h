@@ -3,6 +3,7 @@
 #include <torch/nn/cloneable.h>
 #include <torch/nn/options/embedding.h>
 #include <torch/nn/functional/embedding.h>
+#include <torch/nn/modules/container/any.h>
 #include <torch/nn/pimpl.h>
 #include <torch/types.h>
 
@@ -79,6 +80,16 @@ class TORCH_API EmbeddingBagImpl : public torch::nn::Cloneable<EmbeddingBagImpl>
   void pretty_print(std::ostream& stream) const override;
 
   Tensor forward(const Tensor& input, const Tensor& offsets = {}, const Tensor& per_sample_weights = {});
+
+  Tensor _dummy_forward() {
+    TORCH_CHECK(false, "_dummy_forward is internal API and should not be called");
+  }
+
+  std::vector<AnyModule::Value> _populate_optional_arguments(std::vector<AnyModule::Value>&& arguments) override {
+    arguments.push_back(AnyModule::Value(torch::Tensor()));
+    arguments.push_back(AnyModule::Value(torch::Tensor()));
+    return std::move(arguments);
+  }
 
   /// The `Options` used to configure this `EmbeddingBag` module.
   EmbeddingBagOptions options;

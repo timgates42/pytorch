@@ -243,6 +243,12 @@ class AnyModule::Value {
   Value(const Value& other) = delete;
   Value& operator=(const Value& other) = delete;
 
+  /// Constructs the `Value` from value type.
+  template <typename T>
+  explicit Value(T&& value)
+      : content_(
+            torch::make_unique<Holder<decay_t<T>>>(std::forward<T>(value))) {}
+
   /// Returns a pointer to the value contained in the `Value` if the type passed
   /// as template parameter matches the type of the value stored, and returns a
   /// null pointer otherwise.
@@ -283,12 +289,6 @@ class AnyModule::Value {
  private:
   friend class AnyModule;
   friend struct TestValue;
-
-  /// Constructs the `Value` from value type.
-  template <typename T>
-  explicit Value(T&& value)
-      : content_(
-            torch::make_unique<Holder<decay_t<T>>>(std::forward<T>(value))) {}
 
   /// \internal
   /// The static type of the object we store in the `Value`, which erases the
@@ -375,13 +375,10 @@ struct AnyModule::Holder : public AnyModule::Placeholder {
   /// Calls `forward()` on the underlying module, casting each `Value` in the
   /// argument vector to a concrete value.
   Value forward(std::vector<Value>&& arguments) override {
-    TORCH_CHECK(
-        arguments.size() == sizeof...(ArgumentTypes),
-        c10::demangle(type_info.name()),
-        "'s forward() method expects ",
-        sizeof...(ArgumentTypes),
-        " arguments, but received ",
-        arguments.size());
+    std::vector<Value> arguments_ = std::move(arguments);
+    if (arguments.size() != sizeof...(ArgumentTypes)) {
+      arguments_ = std::move(module->_populate_optional_arguments(std::move(arguments_)));
+    }
     // FYI: During invocation of a module's `forward()` method, the values live
     // in the `arguments` vector inside this function.
     return torch::unpack<Value, ArgumentTypes...>(

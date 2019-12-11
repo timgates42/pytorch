@@ -17,6 +17,9 @@
 namespace torch {
 namespace nn {
 
+class AnyModule;
+class AnyModule::Value;
+
 /// The base class for all modules in PyTorch.
 ///
 /// \rst
@@ -510,6 +513,9 @@ class TORCH_API Module : public std::enable_shared_from_this<Module> {
   /// Unregisters a submodule from this `Module`. If there is no such module
   /// with `name` an exception is thrown.
   void unregister_module(const std::string& name);
+
+  // yf225 TODO comment
+  virtual std::vector<AnyModule::Value> _populate_optional_arguments(std::vector<AnyModule::Value>&& arguments) = 0;
 
  private:
   // Friend classes.
